@@ -7,7 +7,7 @@ from vision_processor import process_image
 
 # 1. Environment & API Setup
 load_dotenv()
-api_key = os.getenv("GEMINI_API_KEY") or "AQ.Ab8RN6JZVGGbRQ5z6J1JAchvM3iNyMlq072CgYB39QH_GhyWbQ"
+api_key = os.getenv("GEMINI_API_KEY") 
 
 client = genai.Client(api_key=api_key)
 
