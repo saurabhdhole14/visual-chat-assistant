@@ -8,15 +8,17 @@ from vision_processor import process_image
 # 1. Environment & API Setup
 load_dotenv()
 
-# Read from Streamlit Cloud Secrets first, fall back to .env / os.environ
-api_key = None
-if "GEMINI_API_KEY" in st.secrets:
-    api_key = st.secrets["GEMINI_API_KEY"]
-else:
-    api_key = os.getenv("GEMINI_API_KEY")
+api_key = os.getenv("GEMINI_API_KEY")
 
 if not api_key:
-    st.error("Missing Gemini API Key! Please configure GEMINI_API_KEY in your Streamlit Cloud Secrets or local .env file.")
+    try:
+        if "GEMINI_API_KEY" in st.secrets:
+            api_key = st.secrets["GEMINI_API_KEY"]
+    except Exception:
+        pass
+
+if not api_key:
+    st.error("Missing Gemini API Key! Please configure GEMINI_API_KEY in your local .env or Streamlit Cloud Secrets.")
     st.stop()
 
 # Initialize Google GenAI client
