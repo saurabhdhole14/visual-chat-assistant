@@ -7,8 +7,19 @@ from vision_processor import process_image
 
 # 1. Environment & API Setup
 load_dotenv()
-api_key = os.getenv("GEMINI_API_KEY") 
 
+# Read from Streamlit Cloud Secrets first, fall back to .env / os.environ
+api_key = None
+if "GEMINI_API_KEY" in st.secrets:
+    api_key = st.secrets["GEMINI_API_KEY"]
+else:
+    api_key = os.getenv("GEMINI_API_KEY")
+
+if not api_key:
+    st.error("Missing Gemini API Key! Please configure GEMINI_API_KEY in your Streamlit Cloud Secrets or local .env file.")
+    st.stop()
+
+# Initialize Google GenAI client
 client = genai.Client(api_key=api_key)
 
 # 2. UI Configuration
@@ -47,13 +58,13 @@ if prompt := st.chat_input("Ask a question about the image or CV task..."):
     with st.chat_message("assistant"):
         inputs = [prompt]
         if active_img:
-            # Ensure the image is in RGB format for the Gemini vision encoder
+            # Convert image to RGB format for the vision encoder
             rgb_img = active_img.convert("RGB")
             inputs.append(rgb_img)
 
-        # Attempt generation using confirmed active model identifiers
         candidate_models = ["gemini-flash-latest", "gemini-3.7-flash", "gemini-3.5-flash"]
         response_text = None
+        last_error = None
 
         with st.spinner("Analyzing image..."):
             for model_name in candidate_models:
@@ -64,11 +75,12 @@ if prompt := st.chat_input("Ask a question about the image or CV task..."):
                     )
                     response_text = response.text
                     break
-                except Exception:
+                except Exception as e:
+                    last_error = e
                     continue
 
         if response_text:
             st.markdown(response_text)
             st.session_state.messages.append({"role": "assistant", "content": response_text})
         else:
-            st.error("Failed to generate response. Check your network or API quota.")
+            st.error(f"Error communicating with Gemini API: {last_error}")
